@@ -405,10 +405,16 @@ void MrSuluPlugin::OnJumpPressed(std::string eventName) {
 			else {
 				float duration = jumpPressedTime - jumpReleaseTime;
 
-				stringstream stream;
-				stream << fixed << setprecision(3) << duration;
-				string s = stream.str();
-				timerDisplay("2nd jump +"+s+"s");
+				stringstream stream0;
+				stream0 << fixed << setprecision(3) << duration;
+				string s0 = stream0.str();
+
+
+				stringstream stream1;
+				stream1 << fixed << setprecision(2) << GetGameCar().GetLocation().Z;
+				string s1 = stream1.str();
+
+				timerDisplay("2nd jump +"+s0+"s, height="+s1);
 			}
 			
 			timerJumpPressed++;
@@ -424,11 +430,16 @@ void MrSuluPlugin::OnJumpReleased(std::string eventName) {
 			jumpReleaseTime = GetSecondsElapsed();
 			float duration = jumpReleaseTime - jumpPressedTime;
 
-			stringstream stream;
-			stream << fixed << setprecision(3) << duration;
-			string s = stream.str();
+			stringstream stream0;
+			stream0 << fixed << setprecision(3) << duration;
+			string s0 = stream0.str();
 
-			timerDisplay("1st jump hold duration "+s+"s");
+
+			stringstream stream1;
+			stream1 << fixed << setprecision(2) << GetGameCar().GetLocation().Z;
+			string s1 = stream1.str();
+
+			timerDisplay("1st jump hold duration "+s0+"s, height=" + s1);
 			timerJumpReleased++;
 		}
 	}
