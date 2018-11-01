@@ -2,8 +2,24 @@
 #pragma comment( lib, "bakkesmod.lib" )
 #include "bakkesmod\plugin\bakkesmodplugin.h"
 
+#define COLOR_TEXT 255c, 255c, 255c, 255c
+#define COLOR_TIMER 100c, 100c, 255c, 255c
+#define COLOR_TIMER_RESET 255c, 100c, 100c, 255c
+#define COLOR_PANEL 64c, 64c, 64c, 192c
+
+inline constexpr char operator "" c(unsigned long long arg) noexcept
+{
+	return static_cast< char >(arg);
+}
+
+struct Color
+{
+	char r, g, b, a;
+};
+
 class CarWrapper;
 class BallWrapper;
+class CanvasWrapper;
 
 class MrSuluPlugin : public BakkesMod::Plugin::BakkesModPlugin
 {
@@ -32,6 +48,7 @@ private:
 	//float lastBallTouchTime;
 
 	void enable();
+	bool canBeEnabled();
 	void timerStart();
 	void timerIsReady();
 	void timerDisplay(std::string category);
@@ -41,7 +58,18 @@ private:
 	BallWrapper GetGameBall();
 	float GetSecondsElapsed();
 
+
+	void drawTimerPanel(CanvasWrapper cw); // , int x, int y);
+	void drawStringAt(CanvasWrapper cw, std::string text, int x, int y, Color col = { 255c, 255c, 255c, 255c });
+	void drawStringAt(CanvasWrapper cw, std::string text, Vector2 loc, Color col = { 255c, 255c, 255c, 255c });
+
+
 	void log(std::string msg);
+	void canvasLog(std::string msg);
+
+	int canvasLogsIndex;
+	int canvasLogsMaxCount;
+	string canvasLogs[12];
 
 public:
 	//MrSuluPlugin();

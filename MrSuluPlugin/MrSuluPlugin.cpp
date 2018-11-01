@@ -9,6 +9,7 @@
 #include "bakkesmod\wrappers\GameObject\CarWrapper.h"
 #include "bakkesmod\wrappers\GameObject\GoalWrapper.h"
 #include "bakkesmod\wrappers\ArrayWrapper.h"
+#include "bakkesmod\wrappers\WrapperStructs.h"
 using namespace std::placeholders;
 
 BAKKESMOD_PLUGIN(MrSuluPlugin, "MrSulu Plugin", "0.1", PLUGINTYPE_FREEPLAY | PLUGINTYPE_CUSTOM_TRAINING)
@@ -19,6 +20,9 @@ T clip(const T& n, const T& lower, const T& upper) {
 	return std::max(lower, std::min(n, upper));
 }
 */
+
+// Very complete plugin
+// https://github.com/AratorRL/SciencePlugin/tree/master/SciencePlugin
 
 FILE *stream;
 
@@ -112,12 +116,196 @@ void MrSuluPlugin::onLoad() {
 	cvarManager->registerCvar("mech_disable_jump", "0", "Disables jump", true, true, 0.f, true, 1.f).bindTo(disableJump);
 	cvarManager->registerCvar("mech_disable_boost", "0", "Disables boost", true, true, 0.f, true, 1.f).bindTo(disableBoost);
 	*/
-	
+
+
+	//drawables
+	canvasLogsMaxCount = (sizeof(canvasLogs) / sizeof(*canvasLogs));
+	canvasLogsIndex=0;
+	for (size_t i = 0; i < canvasLogsMaxCount; i++)
+	{
+		canvasLogs[i] = "";
+	}
+
+	gameWrapper->RegisterDrawable([this](CanvasWrapper cw) {
+		if (!canBeEnabled()) {
+			return;
+		}
+
+		//if (cvarManager->getCvar("showHUD").getBoolValue())
+		//{
+			this->drawTimerPanel(cw); // , 1350, 50);
+		//}
+	});
 }
 
 void MrSuluPlugin::onUnload() {
 
 }
+
+void MrSuluPlugin::drawStringAt(CanvasWrapper cw, std::string text, int x, int y, Color col)
+{
+	cw.SetPosition({ x, y });
+	cw.SetColor(col.r, col.g, col.b, col.a);
+	cw.DrawString(text);
+}
+
+void MrSuluPlugin::drawStringAt(CanvasWrapper cw, std::string text, Vector2 loc, Color col)
+{
+	drawStringAt(cw, text, loc.X, loc.Y, col);
+}
+
+void MrSuluPlugin::drawTimerPanel(CanvasWrapper cw) //, int x, int y)
+{
+	Vector2 size = cw.GetSize();
+
+	int marginLeft = 10;
+	int marginTop = 10;
+
+	int width = 400;
+	int height = 300;
+
+	int lineSpacing = 20;
+
+	int panelMargin = 10;
+	int x = size.X - panelMargin - width;
+	int y = panelMargin;
+
+	cw.SetPosition({ x, y });
+	cw.SetColor(COLOR_PANEL);
+	cw.FillBox({ width, height });
+	cw.SetColor(COLOR_TEXT);
+
+	int currentY = y + marginTop;
+
+	if (timerReady) {
+		drawStringAt(cw, "0.000 seconds", x + marginLeft, currentY, { COLOR_TIMER_RESET });
+		currentY += lineSpacing;
+	} else if (timerStarted) {
+		float time = GetSecondsElapsed() - timerStartTime;
+
+		stringstream stream;
+		stream << fixed << setprecision(3) << time;
+		string s = stream.str();
+
+		drawStringAt(cw, s+" seconds", x + marginLeft, currentY, { COLOR_TIMER });
+
+		currentY += lineSpacing;
+	}
+	else {
+		currentY += lineSpacing;
+	}
+
+	currentY += lineSpacing;
+
+	//browse and display canvasLogs
+	//int index = canvasLogsIndex - (canvasLogsMaxCount - 1);
+	//if (index < 0) index += canvasLogsMaxCount;
+
+	int index = canvasLogsIndex;
+	for (int i = 0; i < canvasLogsMaxCount; i++)
+	{
+		/*
+		stringstream stream;
+		stream << index;
+		string s = stream.str();
+		log( "index "+s );
+
+		log( "drawStringAt  canvasLogs[index] " + canvasLogs[index]);
+		*/
+		drawStringAt(cw, canvasLogs[index], x + marginLeft, currentY);
+		currentY += lineSpacing;
+
+		index++;
+		if (index >= canvasLogsMaxCount) index -= canvasLogsMaxCount;
+	}
+	
+
+	/*
+
+	drawStringAt(cw, "Car derived info", x + marginLeft, y + marginTop);
+
+	this->drawStringAt(cw, "Car derived info", x + marginLeft, y + marginTop);
+
+	int currentLine = marginTop + 50;
+
+	this->drawStringAt(cw, "Linear speed", x + marginLeft, y + currentLine);
+	this->drawStringAt(cw, sp::to_string(lin.magnitude(), 4), x + marginLeft + nameSpacing, y + currentLine);
+
+	currentLine += lineSpacing;
+
+	this->drawStringAt(cw, "Horizontal speed", x + marginLeft, y + currentLine);
+	this->drawStringAt(cw, sp::to_string(horVel.magnitude(), 4), x + marginLeft + nameSpacing, y + currentLine);
+
+	currentLine += lineSpacing;
+
+	this->drawStringAt(cw, "Local lin. velocity", x + marginLeft, y + currentLine);
+	this->drawStringAt(cw, sp::to_string(linLocal.X, 4), x + marginLeft + nameSpacing, y + currentLine);
+	this->drawStringAt(cw, sp::to_string(linLocal.Y, 4), x + marginLeft + nameSpacing + vecSpacing, y + currentLine);
+	this->drawStringAt(cw, sp::to_string(linLocal.Z, 4), x + marginLeft + nameSpacing + vecSpacing * 2, y + currentLine);
+
+	currentLine += lineSpacing;
+
+	this->drawStringAt(cw, "Long. speed", x + marginLeft, y + currentLine);
+	this->drawStringAt(cw, sp::to_string(lonSpeed, 4), x + marginLeft + nameSpacing, y + currentLine);
+
+	currentLine += lineSpacing;
+
+	this->drawStringAt(cw, "Lat. speed", x + marginLeft, y + currentLine);
+	this->drawStringAt(cw, sp::to_string(latSpeed, 4), x + marginLeft + nameSpacing, y + currentLine);
+
+	currentLine += lineSpacing;
+
+	this->drawStringAt(cw, "Rotation fwd", x + marginLeft, y + currentLine);
+	this->drawStringAt(cw, sp::to_string_scientific(fwd.X), x + marginLeft + nameSpacing, y + currentLine);
+	this->drawStringAt(cw, sp::to_string_scientific(fwd.Y), x + marginLeft + nameSpacing + vecSpacing, y + currentLine);
+	this->drawStringAt(cw, sp::to_string_scientific(fwd.Z), x + marginLeft + nameSpacing + vecSpacing * 2, y + currentLine);
+
+	currentLine += lineSpacing;
+
+	this->drawStringAt(cw, "Rotation right", x + marginLeft, y + currentLine);
+	this->drawStringAt(cw, sp::to_string_scientific(right.X), x + marginLeft + nameSpacing, y + currentLine);
+	this->drawStringAt(cw, sp::to_string_scientific(right.Y), x + marginLeft + nameSpacing + vecSpacing, y + currentLine);
+	this->drawStringAt(cw, sp::to_string_scientific(right.Z), x + marginLeft + nameSpacing + vecSpacing * 2, y + currentLine);
+
+	currentLine += lineSpacing;
+
+	this->drawStringAt(cw, "Rotation up", x + marginLeft, y + currentLine);
+	this->drawStringAt(cw, sp::to_string_scientific(up.X), x + marginLeft + nameSpacing, y + currentLine);
+	this->drawStringAt(cw, sp::to_string_scientific(up.Y), x + marginLeft + nameSpacing + vecSpacing, y + currentLine);
+	this->drawStringAt(cw, sp::to_string_scientific(up.Z), x + marginLeft + nameSpacing + vecSpacing * 2, y + currentLine);
+
+	currentLine += lineSpacing;
+
+	this->drawStringAt(cw, "Left steer", x + marginLeft, y + currentLine);
+	this->drawStringAt(cw, sp::to_string(wheels.Get(0).GetSteer2(), 6), x + marginLeft + nameSpacing, y + currentLine);
+
+	currentLine += lineSpacing;
+
+	this->drawStringAt(cw, "Right steer", x + marginLeft, y + currentLine);
+	this->drawStringAt(cw, sp::to_string(wheels.Get(1).GetSteer2(), 6), x + marginLeft + nameSpacing, y + currentLine);
+	*/
+}
+
+void MrSuluPlugin::canvasLog(std::string msg) {
+	/*
+	log("canvasLog " + msg);
+	stringstream stream;
+	stream << canvasLogsIndex;
+	string s = stream.str();
+	log( "canvasLogsIndex " + s);
+	*/
+
+	canvasLogs[canvasLogsIndex] = msg;
+	canvasLogsIndex++;
+	if (canvasLogsIndex >= canvasLogsMaxCount) canvasLogsIndex -= canvasLogsMaxCount;
+	/*
+	stringstream stream2;
+	stream2 << canvasLogsIndex;
+	string s2 = stream2.str();
+	log( "canvasLogsIndex " + s2 );
+	*/
+}
+
 
 BallWrapper MrSuluPlugin::GetGameBall() {
 	TutorialWrapper training = gameWrapper->GetGameEventAsTutorial();
@@ -192,7 +380,7 @@ void MrSuluPlugin::OnBallHitGoal(std::string eventName) {
 
 void MrSuluPlugin::OnPreAsync(std::string funcName)
 {
-	if ((gameWrapper->IsInTutorial()) || (gameWrapper->IsInCustomTraining()))
+	if (canBeEnabled())
 	{
 		TutorialWrapper training = gameWrapper->GetGameEventAsTutorial();
 
@@ -308,8 +496,12 @@ void MrSuluPlugin::OnPreAsync(std::string funcName)
 }
 
 void MrSuluPlugin::log(std::string msg) {
-	cout << msg << endl;  // goes to bakkesmod.log
-	cvarManager->log(msg);
+	//cout << msg << endl;  
+	cvarManager->log(msg); // goes to bakkesmod.log
+}
+
+bool MrSuluPlugin::canBeEnabled() {
+	return ((gameWrapper->IsInTutorial()) || (gameWrapper->IsInCustomTraining()));
 }
 
 void MrSuluPlugin::enable()
@@ -350,6 +542,7 @@ void MrSuluPlugin::timerDisplay(std::string category)
 	stream << fixed << setprecision(3) << time;
 	string s = stream.str();
 	log("MrSulu timer "+category+" : "+s+"s");
+	canvasLog(s + "s (" + category + ")");
 
 	//gameWrapper->LogToChatbox("YO"); this line prevent the plugin from loading
 }
@@ -369,7 +562,7 @@ void MrSuluPlugin::OnWorldDestroy(std::string eventName)
 
 void MrSuluPlugin::OnEnabledChanged(std::string oldValue, CVarWrapper cvar)
 {
-	if (cvar.getBoolValue() && ((gameWrapper->IsInTutorial()) || (gameWrapper->IsInCustomTraining())))
+	if (cvar.getBoolValue() && canBeEnabled())
 	{
 		this->enable();
 	}
