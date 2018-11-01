@@ -510,7 +510,13 @@ void MrSuluPlugin::enable()
 	lastCarLocation.X = lastCarLocation.Y = lastCarLocation.Z = 0;
 	carIdle = false;
 	timerReady = false;
-	gameWrapper->HookEvent("Function TAGame.RBActor_TA.PreAsyncTick", bind(&MrSuluPlugin::OnPreAsync, this, _1));
+	// this tick depends on the FPS and can vary for differetn people
+	//gameWrapper->HookEvent("Function TAGame.RBActor_TA.PreAsyncTick", bind(&MrSuluPlugin::OnPreAsync, this, _1));
+
+	//this tick is always 120/s
+	gameWrapper->HookEvent("Function TAGame.Car_TA.SetVehicleInput", bind(&MrSuluPlugin::OnPreAsync, this, _1));
+
+
 	log("MrSulu enabled !!!");
 }
 
@@ -557,7 +563,9 @@ void MrSuluPlugin::OnWorldLoad(std::string eventName)
 void MrSuluPlugin::OnWorldDestroy(std::string eventName)
 {
 	log("OnWorldDestroy");
-	gameWrapper->UnhookEvent("Function TAGame.RBActor_TA.PreAsyncTick");
+	//gameWrapper->UnhookEvent("Function TAGame.RBActor_TA.PreAsyncTick");
+	gameWrapper->UnhookEvent("Function TAGame.Car_TA.SetVehicleInput");
+
 }
 
 void MrSuluPlugin::OnEnabledChanged(std::string oldValue, CVarWrapper cvar)
@@ -568,7 +576,8 @@ void MrSuluPlugin::OnEnabledChanged(std::string oldValue, CVarWrapper cvar)
 	}
 	else
 	{
-		gameWrapper->UnhookEvent("Function TAGame.RBActor_TA.PreAsyncTick");
+		//gameWrapper->UnhookEvent("Function TAGame.RBActor_TA.PreAsyncTick");
+		gameWrapper->UnhookEvent("Function TAGame.Car_TA.SetVehicleInput");
 	}
 }
 
