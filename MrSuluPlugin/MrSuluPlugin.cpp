@@ -134,6 +134,7 @@ void MrSuluPlugin::onLoad() {
 	//drawables
 	canvasLogsMaxCount = (sizeof(canvasLogs) / sizeof(*canvasLogs));
 	canvasLogsIndex=0;
+	canvasLogsActiveTimerIndex = 0;
 	for (size_t i = 0; i < canvasLogsMaxCount; i++)
 	{
 		canvasLogs[i] = "";
@@ -215,8 +216,18 @@ void MrSuluPlugin::drawTimerPanel(CanvasWrapper cw) //, int x, int y)
 	//if (index < 0) index += canvasLogsMaxCount;
 
 	int index = canvasLogsIndex;
+	// canvasLogsActiveTimerIndex
+	Color textColor = { COLOR_TEXT_UNACTIVE };
+	bool activeReached = false;
+	if (index == canvasLogsActiveTimerIndex) activeReached = true; 
 	for (int i = 0; i < canvasLogsMaxCount; i++)
 	{
+		if (!activeReached) {
+			if (index == canvasLogsActiveTimerIndex) {
+				activeReached = true;
+				textColor = { COLOR_TEXT };
+			}
+		}
 		/*
 		stringstream stream;
 		stream << index;
@@ -225,7 +236,7 @@ void MrSuluPlugin::drawTimerPanel(CanvasWrapper cw) //, int x, int y)
 
 		log( "drawStringAt  canvasLogs[index] " + canvasLogs[index]);
 		*/
-		drawStringAt(cw, canvasLogs[index], x + marginLeft, currentY);
+		drawStringAt(cw, canvasLogs[index], x + marginLeft, currentY, textColor);
 		currentY += lineSpacing;
 
 		index++;
@@ -414,7 +425,7 @@ void MrSuluPlugin::OnJumpPressed(std::string eventName) {
 				stream1 << fixed << setprecision(2) << GetGameCar().GetLocation().Z;
 				string s1 = stream1.str();
 
-				timerDisplay("2nd jump +"+s0+"s, height="+s1);
+				timerDisplay("2nd jump +"+s0+"s, Z="+s1);
 			}
 			
 			timerJumpPressed++;
@@ -439,7 +450,7 @@ void MrSuluPlugin::OnJumpReleased(std::string eventName) {
 			stream1 << fixed << setprecision(2) << GetGameCar().GetLocation().Z;
 			string s1 = stream1.str();
 
-			timerDisplay("1st jump hold duration "+s0+"s, height=" + s1);
+			timerDisplay("1st jump hold duration "+s0+"s, Z=" + s1);
 			timerJumpReleased++;
 		}
 	}
@@ -524,6 +535,25 @@ void MrSuluPlugin::OnTick(std::string funcName)
 				}
 			}
 			*/
+			float timeElpased = GetSecondsElapsed() - timerStartTime;
+			if (timerFastAerialBilan0 == 0) {
+				if (timeElpased >= timerFastAerialBilan0Time) {
+					stringstream stream1;
+					stream1 << fixed << setprecision(2) << GetGameCar().GetLocation().Z;
+					string s1 = stream1.str();
+					timerDisplay("Z=" + s1, timerFastAerialBilan0Time);
+					timerFastAerialBilan0++;
+				}
+			}
+			if (timerFastAerialBilan1 == 0) {
+				if (timeElpased >= timerFastAerialBilan1Time) {
+					stringstream stream1;
+					stream1 << fixed << setprecision(2) << GetGameCar().GetLocation().Z;
+					string s1 = stream1.str();
+					timerDisplay("Z=" + s1, timerFastAerialBilan1Time);
+					timerFastAerialBilan1++;
+				}
+			}
 
 			//if scored
 			if (!training.IsNull()) { //how to do it without training ?
@@ -610,17 +640,23 @@ void MrSuluPlugin::timerStart()
 	carIdle = false;
 	carIdleStartTime = GetSecondsElapsed();
 	timerHitBall = timerHitWorld = timerScore = timerJumpPressed = timerJumpReleased = 0;
+	timerFastAerialBilan0 = timerFastAerialBilan1 = 0;
+	timerFastAerialBilan0Time = 0.6f;
+	timerFastAerialBilan1Time = 1.2f;
 
 	timerStartTime = GetSecondsElapsed();
 	//BallWrapper ball = GetGameBall();
 	//lastBallTouchTime = ball.GetLastTouchTime();
 
+	canvasLogsActiveTimerIndex = canvasLogsIndex;
+
 	log("MrSulu timer starts");
 }
 
-float MrSuluPlugin::timerDisplay(std::string category)
+float MrSuluPlugin::timerDisplay(std::string category, float timeElapsed)
 {
 	float time = GetSecondsElapsed() - timerStartTime;
+	if (timeElapsed >= 0) time = timeElapsed;
 
 	stringstream stream;
 	stream << fixed << setprecision(3) << time;

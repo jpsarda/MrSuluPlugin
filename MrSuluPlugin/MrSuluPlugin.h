@@ -3,6 +3,7 @@
 #include "bakkesmod\plugin\bakkesmodplugin.h"
 
 #define COLOR_TEXT 255c, 255c, 255c, 255c
+#define COLOR_TEXT_UNACTIVE 150c, 150c, 150c, 255c
 #define COLOR_TIMER 100c, 100c, 255c, 255c
 #define COLOR_TIMER_RESET 255c, 100c, 100c, 255c
 #define COLOR_PANEL 64c, 64c, 64c, 192c
@@ -43,6 +44,9 @@ private:
 	int timerHitBall, timerHitWorld, timerScore, timerJumpPressed, timerJumpReleased;
 	float jumpPressedTime, jumpReleaseTime;
 
+	int timerFastAerialBilan0, timerFastAerialBilan1;
+	float timerFastAerialBilan0Time, timerFastAerialBilan1Time;
+
 	Vector lastCarLocation;
 	bool carIdle,timerReady;
 	float carIdleStartTime;
@@ -53,7 +57,7 @@ private:
 	bool canBeEnabled();
 	void timerStart();
 	void timerIsReady();
-	float timerDisplay(std::string category);
+	float timerDisplay(std::string category, float timeElpased=-1.0f);
 
 	bool IsCarReady();
 	CarWrapper GetGameCar();
@@ -70,6 +74,7 @@ private:
 	void canvasLog(std::string msg);
 
 	int canvasLogsIndex;
+	int canvasLogsActiveTimerIndex;
 	int canvasLogsMaxCount;
 	string canvasLogs[12];
 
