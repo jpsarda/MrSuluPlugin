@@ -26,6 +26,7 @@ class MrSuluPlugin : public BakkesMod::Plugin::BakkesModPlugin
 private:
 	shared_ptr<bool> enabled;
 	shared_ptr<float> waitStartTimer;
+	shared_ptr<bool> fastAerials;
 	/*
 	
 	shared_ptr<float> limitThrottle;
@@ -39,7 +40,8 @@ private:
 	bool timerStarted;
 	float timerStartTime;
 
-	int timerHitBall, timerHitWorld, timerScore;
+	int timerHitBall, timerHitWorld, timerScore, timerJumpPressed, timerJumpReleased;
+	float jumpPressedTime, jumpReleaseTime;
 
 	Vector lastCarLocation;
 	bool carIdle,timerReady;
@@ -51,7 +53,7 @@ private:
 	bool canBeEnabled();
 	void timerStart();
 	void timerIsReady();
-	void timerDisplay(std::string category);
+	float timerDisplay(std::string category);
 
 	bool IsCarReady();
 	CarWrapper GetGameCar();
@@ -81,7 +83,11 @@ public:
 	void OnHitWorld(std::string eventName);
 	void OnBallHitGoal(std::string eventName);
 
-	void OnPreAsync(std::string funcName);
+	void OnJumpPressed(std::string eventName);
+	void OnJumpReleased(std::string eventName);
+	//void OnCarSpawn(std::string eventName);
+
+	void OnTick(std::string funcName);
 	void OnWorldLoad(std::string eventName);
 	void OnWorldDestroy(std::string eventName);
 	void OnEnabledChanged(std::string oldValue, CVarWrapper cvar);

@@ -49,6 +49,7 @@ void MrSuluPlugin::onLoad() {
 
 	enabled = make_shared<bool>(false);
 	waitStartTimer = make_shared<float>(1.f);
+	fastAerials = make_shared<bool>(false);
 
 	/*
 	limitSteer = make_shared<float>(1.f);
@@ -81,16 +82,28 @@ void MrSuluPlugin::onLoad() {
 	gameWrapper->HookEvent("Function TAGame.GameEvent_TrainingEditor_TA.OnInit", bind(&MrSuluPlugin::OnWorldLoad, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.GameEvent_TrainingEditor_TA.Destroyed", bind(&MrSuluPlugin::OnWorldDestroy, this, std::placeholders::_1));
 
+
+
 	cvarManager->registerCvar("mrsulu_enabled", "0", "Enables/disable MrSulu", true, true, 0.f, true, 1.f)
 		.addOnValueChanged(std::bind(&MrSuluPlugin::OnEnabledChanged, this, std::placeholders::_1, std::placeholders::_2));
 	cvarManager->getCvar("mrsulu_enabled").bindTo(enabled);
 
-	cvarManager->registerCvar("mrsulu_wait_start_timer", "1", "Wait duration to restart timer", true, true, 0.1f, true, 2.f).bindTo(waitStartTimer);
+	cvarManager->registerCvar("mrsulu_wait_start_timer", "0.25", "Wait duration to restart timer", true, true, 0.1f, true, 2.f).bindTo(waitStartTimer);
+
+	cvarManager->registerCvar("mrsulu_fastaerials", "0", "Enables/disable fast aerials info", true, true, 0.f, true, 1.f).bindTo(fastAerials);
 
 
 	gameWrapper->HookEvent("Function TAGame.Car_TA.EventHitBall", bind(&MrSuluPlugin::OnHitBall, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.Car_TA.EventHitWorld", bind(&MrSuluPlugin::OnHitWorld, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.Ball_TA.OnHitGoal", bind(&MrSuluPlugin::OnBallHitGoal, this, std::placeholders::_1));
+
+	gameWrapper->HookEvent("Function TAGame.Car_TA.OnJumpPressed", bind(&MrSuluPlugin::OnJumpPressed, this, std::placeholders::_1));
+	gameWrapper->HookEvent("Function TAGame.Car_TA.OnJumpReleased", bind(&MrSuluPlugin::OnJumpReleased, this, std::placeholders::_1));
+
+	//not the right event ?
+	//gameWrapper->HookEvent("Function CarComponent_TA.Active.BeginState", bind(&MrSuluPlugin::OnCarSpawn, this, std::placeholders::_1));
+
+	
 
 	/*events
 	Function TAGame.Ball_TA.OnCarTouch
@@ -368,7 +381,7 @@ void MrSuluPlugin::OnHitWorld(std::string eventName) {
 }
 
 void MrSuluPlugin::OnBallHitGoal(std::string eventName) {
-	//log("hit ball");
+	//log("hit goal");
 	if (timerStarted) {
 		if (timerScore < 1) { //display it once only
 			timerDisplay("score");
@@ -377,8 +390,63 @@ void MrSuluPlugin::OnBallHitGoal(std::string eventName) {
 	}
 }
 
+void MrSuluPlugin::OnJumpPressed(std::string eventName) {
+	//log("jump press");
+	if (!timerStarted) { //start timer if not already done by car moving detection
+		timerIsReady();
+		timerStart();
+	}
+	if (timerStarted && *fastAerials) {
+		if (timerJumpPressed < 2) { //display it twice only
+			jumpPressedTime = GetSecondsElapsed();
+			if (timerJumpPressed == 0) {
+				timerDisplay("1st jump");
+			}
+			else {
+				float duration = jumpPressedTime - jumpReleaseTime;
 
-void MrSuluPlugin::OnPreAsync(std::string funcName)
+				stringstream stream;
+				stream << fixed << setprecision(3) << duration;
+				string s = stream.str();
+				timerDisplay("2nd jump +"+s+"s");
+			}
+			
+			timerJumpPressed++;
+		}
+	}
+}
+
+void MrSuluPlugin::OnJumpReleased(std::string eventName) {
+	//log("jump release");
+	if (timerStarted && *fastAerials) {
+		if (timerJumpReleased < 1) { //display it once only
+
+			jumpReleaseTime = GetSecondsElapsed();
+			float duration = jumpReleaseTime - jumpPressedTime;
+
+			stringstream stream;
+			stream << fixed << setprecision(3) << duration;
+			string s = stream.str();
+
+			timerDisplay("1st jump hold duration "+s+"s");
+			timerJumpReleased++;
+		}
+	}
+}
+
+/*
+void MrSuluPlugin::OnCarSpawn(std::string eventName) {
+	if (!IsCarReady()) {
+		log("OnCarSpawn car is not ready!");
+	}
+	//force reset timer
+	CarWrapper gameCar = GetGameCar();
+	carIdle = true;
+	timerIsReady();
+}
+*/
+
+void MrSuluPlugin::OnTick(std::string funcName)
 {
 	if (canBeEnabled())
 	{
@@ -406,17 +474,14 @@ void MrSuluPlugin::OnPreAsync(std::string funcName)
 		if ((carLocation.X == lastCarLocation.X) && (carLocation.Y == lastCarLocation.Y) && (carLocation.Z == lastCarLocation.Z)) {
 			// Check if
 			if (!timerReady) {
-
 				if (carIdle) {
-
 					if (GetSecondsElapsed() - carIdleStartTime > *waitStartTimer) {
 						timerIsReady();
 					}
 				}
 				else {
-
 					carIdle = true;
-					carIdleStartTime =GetSecondsElapsed();
+					carIdleStartTime = GetSecondsElapsed();
 				}
 			}
 		}
@@ -511,10 +576,10 @@ void MrSuluPlugin::enable()
 	carIdle = false;
 	timerReady = false;
 	// this tick depends on the FPS and can vary for differetn people
-	//gameWrapper->HookEvent("Function TAGame.RBActor_TA.PreAsyncTick", bind(&MrSuluPlugin::OnPreAsync, this, _1));
+	//gameWrapper->HookEvent("Function TAGame.RBActor_TA.PreAsyncTick", bind(&MrSuluPlugin::OnTick, this, _1));
 
 	//this tick is always 120/s
-	gameWrapper->HookEvent("Function TAGame.Car_TA.SetVehicleInput", bind(&MrSuluPlugin::OnPreAsync, this, _1));
+	gameWrapper->HookEvent("Function TAGame.Car_TA.SetVehicleInput", bind(&MrSuluPlugin::OnTick, this, _1));
 
 
 	log("MrSulu enabled !!!");
@@ -531,16 +596,18 @@ void MrSuluPlugin::timerStart()
 {
 	timerStarted = true;
 	timerReady = false;
-	timerHitBall = timerHitWorld = timerScore = 0;
+	carIdle = false;
+	carIdleStartTime = GetSecondsElapsed();
+	timerHitBall = timerHitWorld = timerScore = timerJumpPressed = timerJumpReleased = 0;
 
 	timerStartTime = GetSecondsElapsed();
-	BallWrapper ball = GetGameBall();
+	//BallWrapper ball = GetGameBall();
 	//lastBallTouchTime = ball.GetLastTouchTime();
 
 	log("MrSulu timer starts");
 }
 
-void MrSuluPlugin::timerDisplay(std::string category)
+float MrSuluPlugin::timerDisplay(std::string category)
 {
 	float time = GetSecondsElapsed() - timerStartTime;
 
@@ -551,6 +618,7 @@ void MrSuluPlugin::timerDisplay(std::string category)
 	canvasLog(s + "s (" + category + ")");
 
 	//gameWrapper->LogToChatbox("YO"); this line prevent the plugin from loading
+	return time;
 }
 
 void MrSuluPlugin::OnWorldLoad(std::string eventName)
