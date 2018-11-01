@@ -535,23 +535,25 @@ void MrSuluPlugin::OnTick(std::string funcName)
 				}
 			}
 			*/
-			float timeElpased = GetSecondsElapsed() - timerStartTime;
-			if (timerFastAerialBilan0 == 0) {
-				if (timeElpased >= timerFastAerialBilan0Time) {
-					stringstream stream1;
-					stream1 << fixed << setprecision(2) << GetGameCar().GetLocation().Z;
-					string s1 = stream1.str();
-					timerDisplay("Z=" + s1, timerFastAerialBilan0Time);
-					timerFastAerialBilan0++;
+			if (*fastAerials) {
+				float timeElpased = GetSecondsElapsed() - timerStartTime;
+				if (timerFastAerialBilan0 == 0) {
+					if (timeElpased >= timerFastAerialBilan0Time) {
+						stringstream stream1;
+						stream1 << fixed << setprecision(2) << GetGameCar().GetLocation().Z;
+						string s1 = stream1.str();
+						timerDisplay("Z=" + s1, timerFastAerialBilan0Time);
+						timerFastAerialBilan0++;
+					}
 				}
-			}
-			if (timerFastAerialBilan1 == 0) {
-				if (timeElpased >= timerFastAerialBilan1Time) {
-					stringstream stream1;
-					stream1 << fixed << setprecision(2) << GetGameCar().GetLocation().Z;
-					string s1 = stream1.str();
-					timerDisplay("Z=" + s1, timerFastAerialBilan1Time);
-					timerFastAerialBilan1++;
+				if (timerFastAerialBilan1 == 0) {
+					if (timeElpased >= timerFastAerialBilan1Time) {
+						stringstream stream1;
+						stream1 << fixed << setprecision(2) << GetGameCar().GetLocation().Z;
+						string s1 = stream1.str();
+						timerDisplay("Z=" + s1, timerFastAerialBilan1Time);
+						timerFastAerialBilan1++;
+					}
 				}
 			}
 
