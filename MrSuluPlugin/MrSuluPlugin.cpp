@@ -145,10 +145,9 @@ void MrSuluPlugin::onLoad() {
 			return;
 		}
 
-		//if (cvarManager->getCvar("showHUD").getBoolValue())
-		//{
+		if (*enabled) {
 			this->drawTimerPanel(cw); // , 1350, 50);
-		//}
+		}
 	});
 }
 
@@ -212,11 +211,9 @@ void MrSuluPlugin::drawTimerPanel(CanvasWrapper cw) //, int x, int y)
 	currentY += lineSpacing;
 
 	//browse and display canvasLogs
-	//int index = canvasLogsIndex - (canvasLogsMaxCount - 1);
-	//if (index < 0) index += canvasLogsMaxCount;
 
 	int index = canvasLogsIndex;
-	// canvasLogsActiveTimerIndex
+
 	Color textColor = { COLOR_TEXT_UNACTIVE };
 	bool activeReached = false;
 	if (index == canvasLogsActiveTimerIndex) activeReached = true; 
@@ -228,106 +225,18 @@ void MrSuluPlugin::drawTimerPanel(CanvasWrapper cw) //, int x, int y)
 				textColor = { COLOR_TEXT };
 			}
 		}
-		/*
-		stringstream stream;
-		stream << index;
-		string s = stream.str();
-		log( "index "+s );
-
-		log( "drawStringAt  canvasLogs[index] " + canvasLogs[index]);
-		*/
 		drawStringAt(cw, canvasLogs[index], x + marginLeft, currentY, textColor);
 		currentY += lineSpacing;
 
 		index++;
 		if (index >= canvasLogsMaxCount) index -= canvasLogsMaxCount;
 	}
-	
-
-	/*
-
-	drawStringAt(cw, "Car derived info", x + marginLeft, y + marginTop);
-
-	this->drawStringAt(cw, "Car derived info", x + marginLeft, y + marginTop);
-
-	int currentLine = marginTop + 50;
-
-	this->drawStringAt(cw, "Linear speed", x + marginLeft, y + currentLine);
-	this->drawStringAt(cw, sp::to_string(lin.magnitude(), 4), x + marginLeft + nameSpacing, y + currentLine);
-
-	currentLine += lineSpacing;
-
-	this->drawStringAt(cw, "Horizontal speed", x + marginLeft, y + currentLine);
-	this->drawStringAt(cw, sp::to_string(horVel.magnitude(), 4), x + marginLeft + nameSpacing, y + currentLine);
-
-	currentLine += lineSpacing;
-
-	this->drawStringAt(cw, "Local lin. velocity", x + marginLeft, y + currentLine);
-	this->drawStringAt(cw, sp::to_string(linLocal.X, 4), x + marginLeft + nameSpacing, y + currentLine);
-	this->drawStringAt(cw, sp::to_string(linLocal.Y, 4), x + marginLeft + nameSpacing + vecSpacing, y + currentLine);
-	this->drawStringAt(cw, sp::to_string(linLocal.Z, 4), x + marginLeft + nameSpacing + vecSpacing * 2, y + currentLine);
-
-	currentLine += lineSpacing;
-
-	this->drawStringAt(cw, "Long. speed", x + marginLeft, y + currentLine);
-	this->drawStringAt(cw, sp::to_string(lonSpeed, 4), x + marginLeft + nameSpacing, y + currentLine);
-
-	currentLine += lineSpacing;
-
-	this->drawStringAt(cw, "Lat. speed", x + marginLeft, y + currentLine);
-	this->drawStringAt(cw, sp::to_string(latSpeed, 4), x + marginLeft + nameSpacing, y + currentLine);
-
-	currentLine += lineSpacing;
-
-	this->drawStringAt(cw, "Rotation fwd", x + marginLeft, y + currentLine);
-	this->drawStringAt(cw, sp::to_string_scientific(fwd.X), x + marginLeft + nameSpacing, y + currentLine);
-	this->drawStringAt(cw, sp::to_string_scientific(fwd.Y), x + marginLeft + nameSpacing + vecSpacing, y + currentLine);
-	this->drawStringAt(cw, sp::to_string_scientific(fwd.Z), x + marginLeft + nameSpacing + vecSpacing * 2, y + currentLine);
-
-	currentLine += lineSpacing;
-
-	this->drawStringAt(cw, "Rotation right", x + marginLeft, y + currentLine);
-	this->drawStringAt(cw, sp::to_string_scientific(right.X), x + marginLeft + nameSpacing, y + currentLine);
-	this->drawStringAt(cw, sp::to_string_scientific(right.Y), x + marginLeft + nameSpacing + vecSpacing, y + currentLine);
-	this->drawStringAt(cw, sp::to_string_scientific(right.Z), x + marginLeft + nameSpacing + vecSpacing * 2, y + currentLine);
-
-	currentLine += lineSpacing;
-
-	this->drawStringAt(cw, "Rotation up", x + marginLeft, y + currentLine);
-	this->drawStringAt(cw, sp::to_string_scientific(up.X), x + marginLeft + nameSpacing, y + currentLine);
-	this->drawStringAt(cw, sp::to_string_scientific(up.Y), x + marginLeft + nameSpacing + vecSpacing, y + currentLine);
-	this->drawStringAt(cw, sp::to_string_scientific(up.Z), x + marginLeft + nameSpacing + vecSpacing * 2, y + currentLine);
-
-	currentLine += lineSpacing;
-
-	this->drawStringAt(cw, "Left steer", x + marginLeft, y + currentLine);
-	this->drawStringAt(cw, sp::to_string(wheels.Get(0).GetSteer2(), 6), x + marginLeft + nameSpacing, y + currentLine);
-
-	currentLine += lineSpacing;
-
-	this->drawStringAt(cw, "Right steer", x + marginLeft, y + currentLine);
-	this->drawStringAt(cw, sp::to_string(wheels.Get(1).GetSteer2(), 6), x + marginLeft + nameSpacing, y + currentLine);
-	*/
 }
 
 void MrSuluPlugin::canvasLog(std::string msg) {
-	/*
-	log("canvasLog " + msg);
-	stringstream stream;
-	stream << canvasLogsIndex;
-	string s = stream.str();
-	log( "canvasLogsIndex " + s);
-	*/
-
 	canvasLogs[canvasLogsIndex] = msg;
 	canvasLogsIndex++;
 	if (canvasLogsIndex >= canvasLogsMaxCount) canvasLogsIndex -= canvasLogsMaxCount;
-	/*
-	stringstream stream2;
-	stream2 << canvasLogsIndex;
-	string s2 = stream2.str();
-	log( "canvasLogsIndex " + s2 );
-	*/
 }
 
 
@@ -625,7 +534,7 @@ void MrSuluPlugin::enable()
 	gameWrapper->HookEvent("Function TAGame.Car_TA.SetVehicleInput", bind(&MrSuluPlugin::OnTick, this, _1));
 
 
-	log("MrSulu enabled !!!");
+	log("Warp speed MrSulu !!!");
 }
 
 void MrSuluPlugin::timerIsReady()
