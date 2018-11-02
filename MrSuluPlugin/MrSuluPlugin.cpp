@@ -3,6 +3,8 @@
 #include <sstream> // stringstream
 #include <iostream>
 #include <cstdio>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "bakkesmod\wrappers\GameEvent\TutorialWrapper.h"
 #include "bakkesmod\wrappers\GameEvent\ServerWrapper.h"
 #include "bakkesmod\wrappers\GameObject\BallWrapper.h"
@@ -535,6 +537,26 @@ void MrSuluPlugin::enable()
 
 
 	log("Warp speed MrSulu !!!");
+}
+
+float MrSuluPlugin::getCarTilt() {
+	/*
+	RBState rbstate = GetGameCar().GetRBState();
+
+	Vector loc = rbstate.Location;
+	Vector lin = rbstate.LinearVelocity;
+	FQuat quat = rbstate.Quaternion;
+	Vector ang = rbstate.AngularVelocity;
+
+	auto horVel = Vector(lin.X, lin.Y, 0);
+
+	Vector up = quatToUp(quat);
+	Vector right = quatToRight(quat);
+	Vector fwd = quatToFwd(quat);
+
+	return  asinf(fwd.Z) * 180.0f / M_PI;
+	*/
+	return 0;
 }
 
 void MrSuluPlugin::timerIsReady()

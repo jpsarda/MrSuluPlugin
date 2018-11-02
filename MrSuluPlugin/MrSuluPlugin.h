@@ -69,6 +69,7 @@ private:
 	void drawStringAt(CanvasWrapper cw, std::string text, int x, int y, Color col = { 255c, 255c, 255c, 255c });
 	void drawStringAt(CanvasWrapper cw, std::string text, Vector2 loc, Color col = { 255c, 255c, 255c, 255c });
 
+	float getCarTilt();
 
 	void log(std::string msg);
 	void canvasLog(std::string msg);

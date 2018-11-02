@@ -1,4 +1,5 @@
-Release/
+Release/*
+MrSuluPlugin/Release/
 Debug/
  
 # ===================================== #
@@ -33,4 +34,7 @@ ehthumbs.db
 [Dd]esktop.ini
 Corridor/Library/ShaderCache/
 Corridor/Library/metadata/
+
+
+!Release/MrSuluPlugin.dll
 
