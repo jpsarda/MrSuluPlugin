@@ -53,17 +53,7 @@ void MrSuluPlugin::onLoad() {
 	waitStartTimer = make_shared<float>(1.f);
 	fastAerials = make_shared<bool>(false);
 
-	/*
-	limitSteer = make_shared<float>(1.f);
-	limitThrottle = make_shared<float>(1.f);
-	limitPitch = make_shared<float>(1.f);
-	limitYaw = make_shared<float>(1.f);
-	limitRoll = make_shared<float>(1.f);
-
-	disableHandbrake = make_shared<bool>(false);
-	disableJump = make_shared<bool>(false);
-	disableBoost = make_shared<bool>(false);
-	*/
+	carJustReset = 10;
 
 	gameWrapper->HookEvent("Function TAGame.GameEvent_Tutorial_TA.OnInit", bind(&MrSuluPlugin::OnWorldLoad, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.GameEvent_Tutorial_TA.Destroyed", bind(&MrSuluPlugin::OnWorldDestroy, this, std::placeholders::_1));
@@ -94,17 +84,16 @@ void MrSuluPlugin::onLoad() {
 
 	cvarManager->registerCvar("mrsulu_fastaerials", "0", "Enables/disable fast aerials info", true, true, 0.f, true, 1.f).bindTo(fastAerials);
 
-
+	/* moved to enter world event
 	gameWrapper->HookEvent("Function TAGame.Car_TA.EventHitBall", bind(&MrSuluPlugin::OnHitBall, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.Car_TA.EventHitWorld", bind(&MrSuluPlugin::OnHitWorld, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.Ball_TA.OnHitGoal", bind(&MrSuluPlugin::OnBallHitGoal, this, std::placeholders::_1));
-
 	gameWrapper->HookEvent("Function TAGame.Car_TA.OnJumpPressed", bind(&MrSuluPlugin::OnJumpPressed, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.Car_TA.OnJumpReleased", bind(&MrSuluPlugin::OnJumpReleased, this, std::placeholders::_1));
 
 	//not the right event ?
-	//gameWrapper->HookEvent("Function CarComponent_TA.Active.BeginState", bind(&MrSuluPlugin::OnCarSpawn, this, std::placeholders::_1));
-
+	gameWrapper->HookEvent("Function CarComponent_TA.Active.BeginState", bind(&MrSuluPlugin::OnCarSpawn, this, std::placeholders::_1));
+	*/
 	
 
 	/*events
@@ -284,6 +273,8 @@ float MrSuluPlugin::GetSecondsElapsed() {
 }
 
 void MrSuluPlugin::OnHitBall(std::string eventName) {
+	if (!canBeEnabled()) return;
+	if (!*enabled) return;
 	//log("hit ball");
 	if (timerStarted) {
 		if (timerHitBall < 1) { //display it once only
@@ -293,6 +284,8 @@ void MrSuluPlugin::OnHitBall(std::string eventName) {
 	}
 }
 void MrSuluPlugin::OnHitWorld(std::string eventName) {
+	if (!canBeEnabled()) return;
+	if (!*enabled) return;
 	//log("hit world");
 	if (timerStarted) {
 		if (timerHitWorld < 1) { //display it once only
@@ -303,6 +296,8 @@ void MrSuluPlugin::OnHitWorld(std::string eventName) {
 }
 
 void MrSuluPlugin::OnBallHitGoal(std::string eventName) {
+	if (!canBeEnabled()) return;
+	if (!*enabled) return;
 	//log("hit goal");
 	if (timerStarted) {
 		if (timerScore < 1) { //display it once only
@@ -313,6 +308,8 @@ void MrSuluPlugin::OnBallHitGoal(std::string eventName) {
 }
 
 void MrSuluPlugin::OnJumpPressed(std::string eventName) {
+	if (!canBeEnabled()) return;
+	if (!*enabled) return;
 	//log("jump press");
 	if (!timerStarted) { //start timer if not already done by car moving detection
 		timerIsReady();
@@ -345,6 +342,8 @@ void MrSuluPlugin::OnJumpPressed(std::string eventName) {
 }
 
 void MrSuluPlugin::OnJumpReleased(std::string eventName) {
+	if (!canBeEnabled()) return;
+	if (!*enabled) return;
 	//log("jump release");
 	if (timerStarted && *fastAerials) {
 		if (timerJumpReleased < 1) { //display it once only
@@ -367,17 +366,29 @@ void MrSuluPlugin::OnJumpReleased(std::string eventName) {
 	}
 }
 
-/*
+
 void MrSuluPlugin::OnCarSpawn(std::string eventName) {
+	//log("OnCarSpawn");
+	carJustReset = 10;
+	/*
 	if (!IsCarReady()) {
-		log("OnCarSpawn car is not ready!");
+		log("OnCarSpawn car is not ready.");
+		return;
 	}
+	if (gameWrapper->IsInReplay()) {
+		log("OnCarSpawn car is in replay.");
+		return;
+	}
+	log("OnCarSpawn");
+
 	//force reset timer
 	CarWrapper gameCar = GetGameCar();
+	lastCarLocation = gameCar.GetLocation();
 	carIdle = true;
 	timerIsReady();
+	*/
 }
-*/
+
 
 void MrSuluPlugin::OnTick(std::string funcName)
 {
@@ -403,13 +414,37 @@ void MrSuluPlugin::OnTick(std::string funcName)
 
 		//float ballTouchTime = ball.GetLastTouchTime();
 
-		// Check if car was iddle for more than 1 second
-		if ((carLocation.X == lastCarLocation.X) && (carLocation.Y == lastCarLocation.Y) && (carLocation.Z == lastCarLocation.Z)) {
+		/*
+		if (carJustReset) {
+			if (!gameWrapper->IsInReplay()) {
+				lastCarLocation = carLocation;
+				carIdle = true;
+				timerIsReady();
+			}
+			carJustReset = false;
+		}
+		*/
+		
+		//if (carJustReset > 1) carJustReset--;
+		//if (carJustReset <= 1) { //don't do anything for 10 ticks after car reset
+
+		// Check if car was iddle for more than X seconds
+		if (fabsf(carLocation.X - lastCarLocation.X) + fabsf(carLocation.Y - lastCarLocation.Y) + fabsf(carLocation.Z - lastCarLocation.Z) < 0.1f) {
 			// Check if
 			if (!timerReady) {
 				if (carIdle) {
-					if (GetSecondsElapsed() - carIdleStartTime > *waitStartTimer) {
+					//if idle for more than x second or idle after just being reset
+					float waitDuration = *waitStartTimer;
+					if (carJustReset > 0) waitDuration = 0.1f;
+					if (GetSecondsElapsed() - carIdleStartTime > waitDuration) {
+						/*
+						stringstream stream;
+						stream << "carJustReset ";
+						stream << carJustReset;
+						log(stream.str());
+						*/
 						timerIsReady();
+						carJustReset = 0;
 					}
 				}
 				else {
@@ -419,6 +454,17 @@ void MrSuluPlugin::OnTick(std::string funcName)
 			}
 		}
 		else {
+			/*
+			stringstream stream;
+			stream << "Xdiff ";
+			stream << fixed << setprecision(10) << (carLocation.X - lastCarLocation.X);
+			stream << " Ydiff ";
+			stream << fixed << setprecision(10) << (carLocation.Y - lastCarLocation.Y);
+			stream << " Zdiff ";
+			stream << fixed << setprecision(10) << (carLocation.Z - lastCarLocation.Z);
+			string s = stream.str();
+			log(s);
+			*/
 			carIdle = false;
 		}
 
@@ -507,8 +553,9 @@ void MrSuluPlugin::OnTick(std::string funcName)
 				if (!carIdle) {
 					timerStart(); //the timer is ready and the car is not idle anymore, we start the timer
 				}
-			}
+			} 
 		}
+		//}
 		lastCarLocation = carLocation;
 		//lastBallTouchTime = ballTouchTime;
 	}
@@ -534,9 +581,26 @@ void MrSuluPlugin::enable()
 
 	//this tick is always 120/s
 	gameWrapper->HookEvent("Function TAGame.Car_TA.SetVehicleInput", bind(&MrSuluPlugin::OnTick, this, _1));
+	gameWrapper->HookEvent("Function TAGame.Car_TA.EventHitBall", bind(&MrSuluPlugin::OnHitBall, this, std::placeholders::_1));
+	gameWrapper->HookEvent("Function TAGame.Car_TA.EventHitWorld", bind(&MrSuluPlugin::OnHitWorld, this, std::placeholders::_1));
+	gameWrapper->HookEvent("Function TAGame.Ball_TA.OnHitGoal", bind(&MrSuluPlugin::OnBallHitGoal, this, std::placeholders::_1));
+	gameWrapper->HookEvent("Function TAGame.Car_TA.OnJumpPressed", bind(&MrSuluPlugin::OnJumpPressed, this, std::placeholders::_1));
+	gameWrapper->HookEvent("Function TAGame.Car_TA.OnJumpReleased", bind(&MrSuluPlugin::OnJumpReleased, this, std::placeholders::_1));
+	gameWrapper->HookEvent("Function TAGame.Car_TA.PostBeginPlay", bind(&MrSuluPlugin::OnCarSpawn, this, std::placeholders::_1));
 
 
 	log("Warp speed MrSulu !!!");
+}
+
+void MrSuluPlugin::disable()
+{
+	gameWrapper->UnhookEvent("Function TAGame.Car_TA.SetVehicleInput");
+	gameWrapper->UnhookEvent("Function TAGame.Car_TA.EventHitBall");
+	gameWrapper->UnhookEvent("Function TAGame.Car_TA.EventHitWorld");
+	gameWrapper->UnhookEvent("Function TAGame.Ball_TA.OnHitGoal");
+	gameWrapper->UnhookEvent("Function TAGame.Car_TA.OnJumpPressed");
+	gameWrapper->UnhookEvent("Function TAGame.Car_TA.OnJumpReleased");
+	gameWrapper->UnhookEvent("Function TAGame.Car_TA.PostBeginPlay");
 }
 
 float MrSuluPlugin::getCarTilt() {
@@ -604,15 +668,13 @@ float MrSuluPlugin::timerDisplay(std::string category, float timeElapsed)
 void MrSuluPlugin::OnWorldLoad(std::string eventName)
 {
 	log("OnWorldLoad");
-	if (*enabled) 
-		this->enable();
+	if (*enabled) enable();
 }
 
 void MrSuluPlugin::OnWorldDestroy(std::string eventName)
 {
 	log("OnWorldDestroy");
-	//gameWrapper->UnhookEvent("Function TAGame.RBActor_TA.PreAsyncTick");
-	gameWrapper->UnhookEvent("Function TAGame.Car_TA.SetVehicleInput");
+	disable();
 
 }
 
@@ -620,12 +682,11 @@ void MrSuluPlugin::OnEnabledChanged(std::string oldValue, CVarWrapper cvar)
 {
 	if (cvar.getBoolValue() && canBeEnabled())
 	{
-		this->enable();
+		enable();
 	}
 	else
 	{
-		//gameWrapper->UnhookEvent("Function TAGame.RBActor_TA.PreAsyncTick");
-		gameWrapper->UnhookEvent("Function TAGame.Car_TA.SetVehicleInput");
+		disable();
 	}
 }
 

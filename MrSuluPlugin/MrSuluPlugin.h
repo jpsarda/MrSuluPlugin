@@ -28,16 +28,10 @@ private:
 	shared_ptr<bool> enabled;
 	shared_ptr<float> waitStartTimer;
 	shared_ptr<bool> fastAerials;
-	/*
 	
-	shared_ptr<float> limitThrottle;
-	shared_ptr<float> limitYaw;
-	shared_ptr<float> limitPitch;
-	shared_ptr<float> limitRoll;
-	shared_ptr<bool> disableHandbrake;
-	shared_ptr<bool> disableJump;
-	shared_ptr<bool> disableBoost;
-	*/
+
+	int carJustReset;
+
 	bool timerStarted;
 	float timerStartTime;
 
@@ -54,6 +48,7 @@ private:
 	//float lastBallTouchTime;
 
 	void enable();
+	void disable();
 	bool canBeEnabled();
 	void timerStart();
 	void timerIsReady();
@@ -91,7 +86,7 @@ public:
 
 	void OnJumpPressed(std::string eventName);
 	void OnJumpReleased(std::string eventName);
-	//void OnCarSpawn(std::string eventName);
+	void OnCarSpawn(std::string eventName);
 
 	void OnTick(std::string funcName);
 	void OnWorldLoad(std::string eventName);
