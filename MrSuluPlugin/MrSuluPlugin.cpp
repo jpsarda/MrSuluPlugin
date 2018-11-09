@@ -389,6 +389,7 @@ void MrSuluPlugin::OnCarSpawn(std::string eventName) {
 	*/
 }
 
+//Called when ball starts to move in custom training, perfect time to reset the timer.
 void MrSuluPlugin::OnFireBall(std::string eventName)
 {
 	timerIsReady();
