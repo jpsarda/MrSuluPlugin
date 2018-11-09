@@ -389,6 +389,13 @@ void MrSuluPlugin::OnCarSpawn(std::string eventName) {
 	*/
 }
 
+void MrSuluPlugin::OnFireBall(std::string eventName)
+{
+	timerIsReady();
+	timerStart();
+	timerDisplay("fire ball");
+}
+
 
 void MrSuluPlugin::OnTick(std::string funcName)
 {
@@ -587,7 +594,7 @@ void MrSuluPlugin::enable()
 	gameWrapper->HookEvent("Function TAGame.Car_TA.OnJumpPressed", bind(&MrSuluPlugin::OnJumpPressed, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.Car_TA.OnJumpReleased", bind(&MrSuluPlugin::OnJumpReleased, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.Car_TA.PostBeginPlay", bind(&MrSuluPlugin::OnCarSpawn, this, std::placeholders::_1));
-
+	gameWrapper->HookEvent("Function TAGame.GameEvent_GameEditor_TA.FireBalls", bind(&MrSuluPlugin::OnFireBall, this, std::placeholders::_1));
 
 	log("Warp speed MrSulu !!!");
 }
@@ -601,6 +608,7 @@ void MrSuluPlugin::disable()
 	gameWrapper->UnhookEvent("Function TAGame.Car_TA.OnJumpPressed");
 	gameWrapper->UnhookEvent("Function TAGame.Car_TA.OnJumpReleased");
 	gameWrapper->UnhookEvent("Function TAGame.Car_TA.PostBeginPlay");
+	gameWrapper->UnhookEvent("Function TAGame.GameEvent_GameEditor_TA.FireBalls");
 }
 
 float MrSuluPlugin::getCarTilt() {

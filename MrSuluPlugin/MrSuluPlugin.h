@@ -87,6 +87,7 @@ public:
 	void OnJumpPressed(std::string eventName);
 	void OnJumpReleased(std::string eventName);
 	void OnCarSpawn(std::string eventName);
+	void OnFireBall(std::string eventName);
 
 	void OnTick(std::string funcName);
 	void OnWorldLoad(std::string eventName);
